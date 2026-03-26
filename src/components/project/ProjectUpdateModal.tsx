@@ -1,8 +1,9 @@
 "use client";
 
-import { ProjectUpdateParams, ProjectUpdateResponse } from "@/hooks/project/UpdateProject/interface";
-import { useUpdateProject } from "@/hooks/project/UpdateProject/useUpdateProject";
 import { useState, useEffect } from "react";
+import Modal from "@/components/ui/Modal";
+import { useUpdateProject } from "@/hooks/project/useUpdateProject";
+import type { ProjectUpdateParams, ProjectUpdateResponse } from "@/types";
 
 interface Props {
   project: ProjectUpdateResponse;
@@ -11,151 +12,59 @@ interface Props {
   updatedUserId: number;
 }
 
-function getChangedFields<T extends { [K in keyof T]: T[K] }>(original: T, updated: T): Partial<T> {
-  const changed = {} as Partial<T>;
-  for (const key in updated) {
-    if (updated[key] !== original[key]) {
-      changed[key] = updated[key];
-    }
-  }
-  return changed;
+function getChangedFields<T extends object>(original: T, updated: T): Partial<T> {
+  return (Object.keys(updated) as (keyof T)[]).reduce((acc, key) => {
+    if (updated[key] !== original[key]) acc[key] = updated[key];
+    return acc;
+  }, {} as Partial<T>);
 }
-export const ProjectUpdateModal = ({ project, onClose, onUpdate, updatedUserId }: Props) => {
-  const originalData: ProjectUpdateParams = {
-    name: project.name || "",
-    openAiKey: project.openAiKey || "",
-    prompt: project.prompt || "",
-    embedModel: project.embedModel || "",
-    chatModel: project.chatModel || "",
-    dimensions: project.dimensions || 3072,
-    updatedUserId: updatedUserId,
+
+const inputCls = "w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-slate-800 transition text-sm";
+
+export default function ProjectUpdateModal({ project, onClose, onUpdate, updatedUserId }: Props) {
+  const original: ProjectUpdateParams = {
+    name: project.name || "", openAiKey: project.openAiKey || "",
+    prompt: project.prompt || "", embedModel: project.embedModel || "",
+    chatModel: project.chatModel || "", dimensions: project.dimensions || 3072,
+    updatedUserId,
   };
 
-  const [form, setForm] = useState<ProjectUpdateParams>(originalData);
-
-  useEffect(() => {
-    setForm(originalData);
-  }, [project]);
+  const [form, setForm] = useState(original);
+  useEffect(() => setForm(original), [project]);
 
   const { handleUpdate, loading, error } = useUpdateProject();
+  const set = (k: keyof ProjectUpdateParams) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((prev) => ({ ...prev, [k]: k === "dimensions" ? Number(e.target.value) : e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const changedFields = getChangedFields(originalData, form);
-    changedFields.updatedUserId = updatedUserId;
-
-    if (Object.keys(changedFields).length === 1 && changedFields.updatedUserId !== undefined) {
-      alert("변경된 내용이 없습니다.");
-      return;
-    }
-
-    await handleUpdate(project.key, changedFields);
-    if (onUpdate) onUpdate();
+    const changed = { ...getChangedFields(original, form), updatedUserId };
+    if (Object.keys(changed).length === 1) { alert("변경된 내용이 없습니다."); return; }
+    await handleUpdate(project.key, changed);
+    onUpdate?.();
     onClose();
   };
 
-  const inputStyle = { width: "100%", padding: "8px 10px", borderRadius: 4, border: "1px solid #ccc", fontSize: 16, outline: "none" };
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          padding: 30,
-          borderRadius: 10,
-          width: 400,
-          display: "flex",
-          flexDirection: "column",
-          gap: 20,
-          color: "#000",
-        }}
-      >
-        <h2 style={{ marginBottom: 20 }}>프로젝트 수정</h2>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <input
-            type="text"
-            placeholder="프로젝트 이름"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            style={inputStyle}
-          />
-          <input
-            type="text"
-            placeholder="OpenAI Key"
-            value={form.openAiKey}
-            onChange={(e) => setForm({ ...form, openAiKey: e.target.value })}
-            style={inputStyle}
-          />
-          <input
-            type="text"
-            placeholder="Embed Model"
-            value={form.embedModel}
-            onChange={(e) => setForm({ ...form, embedModel: e.target.value })}
-            style={inputStyle}
-          />
-          <input
-            type="text"
-            placeholder="Chat Model"
-            value={form.chatModel}
-            onChange={(e) => setForm({ ...form, chatModel: e.target.value })}
-            style={inputStyle}
-          />
-          <input
-            type="number"
-            placeholder="Dimensions"
-            value={form.dimensions}
-            onChange={(e) => setForm({ ...form, dimensions: Number(e.target.value) })}
-            style={inputStyle}
-          />
-          <textarea
-            placeholder="프롬프트"
-            value={form.prompt}
-            onChange={(e) => setForm({ ...form, prompt: e.target.value })}
-            style={{ ...inputStyle, height: 100 }}
-          />
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button
-              type="submit"
-              style={{
-                padding: "8px 16px",
-                borderRadius: 6,
-                border: "none",
-                backgroundColor: "#0070f3",
-                color: "#fff",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-              disabled={loading}
-            >
-              {loading ? "수정 중..." : "수정하기"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: "8px 16px",
-                borderRadius: 6,
-                border: "none",
-                backgroundColor: "#ccc",
-                color: "#000",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              취소
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal onClose={onClose}>
+      <h2 className="text-xl font-bold text-slate-800 mb-5">프로젝트 수정</h2>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {(["name", "openAiKey", "embedModel", "chatModel"] as const).map((field) => (
+          <input key={field} type="text" placeholder={{ name: "프로젝트 이름", openAiKey: "OpenAI Key", embedModel: "Embed Model", chatModel: "Chat Model" }[field]}
+            value={form[field] as string} onChange={set(field)} className={inputCls} />
+        ))}
+        <input type="number" placeholder="Dimensions" value={form.dimensions} onChange={set("dimensions")} className={inputCls} />
+        <textarea placeholder="프롬프트" value={form.prompt} onChange={set("prompt")} className={`${inputCls} h-24 resize-none`} />
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+            취소
+          </button>
+          <button type="submit" disabled={loading} className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 transition">
+            {loading ? "수정 중..." : "수정하기"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
-};
+}

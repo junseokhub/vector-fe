@@ -1,72 +1,40 @@
-"use client";
-import { storage } from "@/utils/storage";
 import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { storage } from "@/lib/storage";
+import type { ChatMessage } from "@/types";
 
-interface ChatMessage {
-  role: "user" | "assistant";
-  text: string;
-}
-
-interface ChatRequest {
-  text: string;
-  projectKey: string;
-  userId: number;
-  sessionId?: string;
-}
-
-export const useChat = (projectKey: string, userId: number) => {
+export function useChat(projectKey: string, userId: number) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState("");
 
   useEffect(() => {
-    const savedSessionId = storage.get("sessionId");
-    if (savedSessionId) {
-      setSessionId(savedSessionId);
-    }
-  }, []);
+    const key = `chat_session_${projectKey}_${userId}`;
+    const saved = sessionStorage.getItem(key) ?? uuidv4();
+    sessionStorage.setItem(key, saved);
+    setSessionId(saved);
+  }, [projectKey, userId]);
 
   const sendMessage = async (text: string) => {
+    if (!sessionId) return;
     setMessages((prev) => [...prev, { role: "user", text }]);
     setLoading(true);
-
-    const token = storage.get("accessToken");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    const body: ChatRequest = {
-      text,
-      projectKey,
-      userId,
-    };
-
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${storage.get("accessToken")}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ text, projectKey, userId, sessionId }),
       });
-
       const data = await res.json();
-
       setMessages((prev) => [...prev, { role: "assistant", text: data.output }]);
-      
-      if (data.sessionId) {
-        setSessionId(data.sessionId);
-        storage.set("sessionId", data.sessionId);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("에러에러")
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) {
+      console.error(e);
+      alert("에러 발생");
+    } finally { setLoading(false); }
   };
 
   return { messages, sendMessage, loading };
-};
+}

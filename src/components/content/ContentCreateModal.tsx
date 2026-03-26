@@ -1,20 +1,15 @@
 "use client";
 
-import { useCreateContent } from "@/hooks/content/CreateContent/useCreateContent";
-import { authState } from "@/state/authAtom";
 import { useState } from "react";
 import { useRecoilValue } from "recoil";
+import Modal from "@/components/ui/Modal";
+import { useCreateContent } from "@/hooks/content/useCreateContent";
+import { authState } from "@/state/authAtom";
 
-interface Props {
-  projectKey: string;
-  onClose: () => void;
-  onCreate?: () => void;
-}
+interface Props { projectKey: string; onClose: () => void; onCreate?: () => void }
 
-export const ContentCreateModal = ({ projectKey, onClose, onCreate }: Props) => {
-  const auth = useRecoilValue(authState);
-  const userId = auth.id ?? 0
-  
+export default function ContentCreateModal({ projectKey, onClose, onCreate }: Props) {
+  const { id: userId } = useRecoilValue(authState);
   const [title, setTitle] = useState("");
   const [answer, setAnswer] = useState("");
   const { handleCreate, loading, error } = useCreateContent();
@@ -22,53 +17,26 @@ export const ContentCreateModal = ({ projectKey, onClose, onCreate }: Props) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await handleCreate({ userId, title, answer, projectKey });
-    if (onCreate) onCreate();
+    onCreate?.();
     onClose();
   };
 
+  const inputCls = "w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-slate-800 transition text-sm";
+
   return (
-    <div style={{
-      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex", alignItems: "center", justifyContent: "center"
-    }}>
-      <div style={{
-        background: "#fff",
-        padding: 30,
-        borderRadius: 10,
-        width: 400,
-        display: "flex",
-        flexDirection: "column",
-        gap: 20,
-        color: "#000"
-      }}>
-        <h2 style={{ marginBottom: 20 }}>주제 생성</h2>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <input
-            type="text"
-            placeholder="제목"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1px solid #ccc", fontSize: 16, outline: "none" }}
-          />
-          <textarea
-            placeholder="답변"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1px solid #ccc", fontSize: 16, outline: "none", height: 100 }}
-          />
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button type="submit" style={{ padding: "8px 16px", borderRadius: 6, border: "none", backgroundColor: "#0070f3", color: "#fff", fontWeight: "bold", cursor: "pointer" }} disabled={loading}>
-              {loading ? "생성 중..." : "생성하기"}
-            </button>
-            <button type="button" onClick={onClose} style={{ padding: "8px 16px", borderRadius: 6, border: "none", backgroundColor: "#ccc", color: "#000", fontWeight: "bold", cursor: "pointer" }}>
-              취소
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal onClose={onClose}>
+      <h2 className="text-xl font-bold text-slate-800 mb-5">주제 생성</h2>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input type="text" placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} required className={inputCls} />
+        <textarea placeholder="답변" value={answer} onChange={(e) => setAnswer(e.target.value)} className={`${inputCls} h-28 resize-none`} />
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">취소</button>
+          <button type="submit" disabled={loading} className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 transition">
+            {loading ? "생성 중..." : "생성하기"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
-};
+}

@@ -2,158 +2,96 @@
 
 import { useEffect, useState } from "react";
 import { useRecoilValue } from "recoil";
-import { useGetContentDetail } from "@/hooks/content/DetailContent/useGetContentDetail";
-import { useUpdateContent } from "@/hooks/content/UpdateContent/useUpdateContent";
 import { authState } from "@/state/authAtom";
+import { useGetContentDetail } from "@/hooks/content/useGetContentDetail";
+import { useUpdateContent } from "@/hooks/content/useUpdateContent";
 
-interface Props {
-  contentKey: string;
-}
+const inputCls = "w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-slate-800 transition text-sm";
 
-export default function ContentDetail({ contentKey }: Props) {
-  const auth = useRecoilValue(authState);
-  const userId = auth.id;
-  
-
+export default function ContentDetail({ contentKey }: { contentKey: string }) {
+  const { id: userId } = useRecoilValue(authState);
   const { contentDetail: content, loading, error } = useGetContentDetail(contentKey);
+  const { handleUpdate, loading: saving, error: saveError } = useUpdateContent();
+
   const [isEditing, setIsEditing] = useState(false);
-
-  const [titleValue, setTitleValue] = useState("");
-  const [answerValue, setAnswerValue] = useState("");
-
-  const { handleUpdate, loading: updateLoading, error: updateError } = useUpdateContent();
+  const [title, setTitle] = useState("");
+  const [answer, setAnswer] = useState("");
 
   useEffect(() => {
-    if (content) {
-      setTitleValue(content.title);
-      setAnswerValue(content.answer);
-      setIsEditing(false);
-    }
+    if (content) { setTitle(content.title); setAnswer(content.answer); setIsEditing(false); }
   }, [content]);
 
-  if (!userId) {
-    return <div style={{ padding: "40px", textAlign: "center" }}>로그인이 필요합니다.</div>;
-  }
+  if (!userId) return <Centered text="로그인이 필요합니다." />;
+  if (loading) return <Centered text="로딩중..." />;
+  if (error) return <Centered text={`에러: ${error}`} isError />;
+  if (!content) return <Centered text="데이터 없음" />;
 
-  if (loading) return <div style={{ padding: "40px", textAlign: "center" }}>로딩중...</div>;
-  if (error) return <div style={{ padding: "40px", textAlign: "center", color: "red" }}>에러: {error}</div>;
-  if (!content) return <div style={{ padding: "40px", textAlign: "center" }}>데이터 없음</div>;
-
-  const isChanged = (): boolean => {
-    return titleValue !== content.title || answerValue !== content.answer;
-  };
+  const isDirty = title !== content.title || answer !== content.answer;
 
   const handleSave = async () => {
-    if (!isChanged()) {
-      alert("변경된 내용이 없습니다.");
-      return;
-    }
-
-    await handleUpdate(content.id, {
-      title: titleValue,
-      answer: answerValue,
-      updatedUserId: userId,
-    });
-
+    if (!isDirty) { alert("변경된 내용이 없습니다."); return; }
+    await handleUpdate(content.id, { title, answer, updatedUserId: userId });
     setIsEditing(false);
   };
 
-  const buttonStyle = {
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "bold",
-    marginRight: "8px",
-  };
-
   return (
-    <div
-      style={{
-        padding: "20px",
-        maxWidth: "700px",
-        margin: "40px auto",
-        backgroundColor: "#fff",
-        borderRadius: "10px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-      }}
-    >
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        {isEditing ? (
-          <input
-            type="text"
-            value={titleValue}
-            onChange={(e) => setTitleValue(e.target.value)}
-            style={{
-              fontSize: "22px",
-              fontWeight: "bold",
-              flex: 1,
-              padding: "5px 8px",
-            }}
-          />
-        ) : (
-          <h1 style={{ fontSize: "24px", margin: 0 }}>{content.title}</h1>
-        )}
+    <div className="max-w-2xl mx-auto py-8">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
+          {isEditing ? (
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={`${inputCls} text-lg font-bold`} />
+          ) : (
+            <h1 className="text-xl font-bold text-slate-800 flex-1">{content.title}</h1>
+          )}
+          <div className="flex gap-2 shrink-0">
+            {isEditing ? (
+              <>
+                <button onClick={handleSave} disabled={saving}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 transition">
+                  {saving ? "수정 중..." : "저장"}
+                </button>
+                <button onClick={() => { setTitle(content.title); setAnswer(content.answer); setIsEditing(false); }}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+                  취소
+                </button>
+              </>
+            ) : (
+              <button onClick={() => setIsEditing(true)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition">
+                수정
+              </button>
+            )}
+          </div>
+        </div>
 
-        {isEditing ? (
-          <>
-            <button
-              style={{ ...buttonStyle, backgroundColor: "#28a745" }}
-              onClick={handleSave}
-              disabled={updateLoading}
-            >
-              {updateLoading ? "수정 중..." : "수정하기"}
-            </button>
-            <button
-              style={{ ...buttonStyle, backgroundColor: "#6c757d" }}
-              onClick={() => {
-                setTitleValue(content.title);
-                setAnswerValue(content.answer);
-                setIsEditing(false);
-              }}
-              disabled={updateLoading}
-            >
-              취소
-            </button>
-          </>
-        ) : (
-          <button style={buttonStyle} onClick={() => setIsEditing(true)}>
-            수정
-          </button>
-        )}
-      </header>
+        {/* Key */}
+        <div className="mb-4">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Key</span>
+          <p className="font-mono text-sm text-slate-600 mt-1 bg-slate-50 px-3 py-2 rounded-lg">{content.key}</p>
+        </div>
 
-      <div style={{ marginTop: "20px" }}>
-        <strong>Key:</strong> {content.key}
-      </div>
+        {/* Answer */}
+        <div className="mb-4">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">답변</span>
+          {isEditing ? (
+            <textarea value={answer} onChange={(e) => setAnswer(e.target.value)}
+              className={`${inputCls} mt-1 h-40 resize-none`} />
+          ) : (
+            <p className="mt-1 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{content.answer}</p>
+          )}
+        </div>
 
-      <div style={{ marginTop: "20px" }}>
-        <strong>답변:</strong>
-        {isEditing ? (
-          <textarea
-            value={answerValue}
-            onChange={(e) => setAnswerValue(e.target.value)}
-            style={{
-              width: "100%",
-              minHeight: "150px",
-              padding: "8px",
-              marginTop: "8px",
-              fontSize: "14px",
-            }}
-          />
-        ) : (
-          <p style={{ marginTop: "8px", whiteSpace: "pre-wrap" }}>{content.answer}</p>
-        )}
-      </div>
+        {saveError && <p className="text-red-500 text-sm mt-2">{saveError}</p>}
 
-      {updateError && <p style={{ color: "red", marginTop: "10px" }}>에러: {updateError}</p>}
-
-      <div style={{ marginTop: "20px", fontSize: "13px", color: "#666" }}>
-        생성일: {new Date(content.createdAt).toLocaleString()}
+        <div className="text-xs text-slate-400 border-t border-slate-100 pt-4 mt-4">
+          생성일: {new Date(content.createdAt).toLocaleString()}
+        </div>
       </div>
     </div>
   );
+}
+
+function Centered({ text, isError = false }: { text: string; isError?: boolean }) {
+  return <div className={`text-center py-20 font-medium ${isError ? "text-red-500" : "text-slate-500"}`}>{text}</div>;
 }

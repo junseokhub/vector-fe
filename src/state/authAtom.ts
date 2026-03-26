@@ -1,11 +1,6 @@
-import { storage } from "@/utils/storage";
 import { atom } from "recoil";
-
-export interface AuthState {
-  accessToken: string;
-  id: number;
-  email: string;
-}
+import { storage } from "@/lib/storage";
+import type { AuthState } from "@/types";
 
 export const authState = atom<AuthState>({
   key: "authStateVector",

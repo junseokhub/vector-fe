@@ -1,5 +1,5 @@
-import { storage } from '@/utils/storage';
-import { atom } from 'recoil';
+import { atom } from "recoil";
+import { storage } from "@/lib/storage";
 
 export const projectKeyState = atom<string | null>({
   key: "selectedProjectKeyState",

@@ -1,15 +1,22 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import ContentDetail from "@/components/content/ContentDetail";
+import Layout from "@/components/layout/Layout";
 
-export default function ContentDetailPage() {
-  const searchParams = useSearchParams();
-  const contentKey = searchParams?.get("key") ?? "";
+export default function ContentPage() {
+  const { query } = useRouter();
+  const contentKey = typeof query.key === "string" ? query.key : "";
 
   if (!contentKey) {
-    return <div style={{ padding: "40px", textAlign: "center" }}>key 값이 필요합니다.</div>;
+    return (
+      <Layout>
+        <p className="text-center py-20 text-slate-500">key 값이 필요합니다.</p>
+      </Layout>
+    );
   }
 
-  return <ContentDetail contentKey={contentKey} />;
+  return (
+    <Layout>
+      <ContentDetail contentKey={contentKey} />
+    </Layout>
+  );
 }

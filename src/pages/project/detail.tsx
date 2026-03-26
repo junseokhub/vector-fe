@@ -1,12 +1,22 @@
-"use client";
+import { useRouter } from "next/router";
 import ProjectDetailContents from "@/components/project/ProjectDetailContents";
-import { useSearchParams } from "next/navigation";
+import Layout from "@/components/layout/Layout.tsx";
 
 export default function ProjectDetailPage() {
-  const searchParams = useSearchParams();
-  const projectKey = searchParams?.get("key");
+  const { query } = useRouter();
+  const projectKey = typeof query.key === "string" ? query.key : "";
 
-  if (!projectKey) return <div>프로젝트 키가 없습니다.</div>;
+  if (!projectKey) {
+    return (
+      <Layout>
+        <p className="text-center py-20 text-slate-500">프로젝트 키가 없습니다.</p>
+      </Layout>
+    );
+  }
 
-  return <ProjectDetailContents projectKey={projectKey} />;
+  return (
+    <Layout>
+      <ProjectDetailContents projectKey={projectKey} />
+    </Layout>
+  );
 }
