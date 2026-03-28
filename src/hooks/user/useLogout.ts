@@ -17,7 +17,6 @@ export function useLogout() {
       resetAuth();
       storage.remove("accessToken");
       storage.remove("userId");
-      storage.remove("userEmail");
       toast.success("로그아웃 됐습니다.");
       router.replace("/login");
     }

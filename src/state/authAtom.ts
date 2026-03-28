@@ -9,7 +9,6 @@ export const authState = atom<AuthState>({
   default: {
     accessToken: "",
     id: 0,
-    email: "",
   },
   effects: [
     ({ setSelf }) => {
@@ -17,12 +16,10 @@ export const authState = atom<AuthState>({
 
       const accessToken = storage.get("accessToken") || "";
       const userId = storage.get("userId");
-      const email = storage.get("email") || "";
 
       setSelf({
         accessToken,
         id: userId ? parseInt(userId) : 0,
-        email,
       });
     },
   ],

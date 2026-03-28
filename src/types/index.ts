@@ -2,7 +2,6 @@
 export interface AuthState {
   accessToken: string;
   id: number;
-  email: string;
 }
 
 export interface LoginParams { 

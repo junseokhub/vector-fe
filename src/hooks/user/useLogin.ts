@@ -20,10 +20,9 @@ export function useLogin() {
       const data = await client
         .post("/api/auth/login", { json: { email, password } as LoginParams })
         .json<LoginResponse>();
-      setAuth({ accessToken: data.accessToken, id: data.id, email: data.email });
+      setAuth({ accessToken: data.accessToken, id: data.id });
       storage.set("accessToken", data.accessToken);
       storage.set("userId", data.id.toString());
-      storage.set("userEmail", data.email);
       router.push("/project");
     } catch (err) {
     if (err instanceof HTTPError) {

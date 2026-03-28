@@ -20,10 +20,9 @@ const client = ky.create({
     ],
     afterResponse: [
       async (_request, _options, response) => {
-        const newAccessToken = response.headers.get("newAccessToken");
+        const newAccessToken = response.headers.get("new-access-token");
         if (newAccessToken) {
           setRecoil(authState, (prev) => ({ ...prev, accessToken: newAccessToken }));
-          storage.set("accessToken", newAccessToken);
         }
       },
     ],
