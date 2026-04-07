@@ -1,29 +1,31 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
-import client from "@/api/client";
-import { ProjectUpdateParams } from "@/types";
-import toast from "react-hot-toast";
- 
-export function useUpdateProject() {
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import client from '@/api/client';
+import type { ContentUpdateParams } from '@/types';
+import toast from 'react-hot-toast';
+
+export function useUpdateContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
- 
-  const handleUpdate = async (key: string, params: Partial<ProjectUpdateParams>) => {
-    setLoading(true); setError(null);
- 
+
+  const handleUpdate = async (contentId: number, params: ContentUpdateParams) => {
+    setLoading(true);
+    setError(null);
+
     try {
-      const data = await client.post(`/api/project/update/${key}`, {
-        json: params,
-      }).json();
-      toast.success("업데이트 성공");
-      router.reload();
-      return data;
-    } catch (e) {
-      toast.error("업데이트 실패")
-      setError(e instanceof Error ? e.message : "업데이트 실패");
-    } finally { setLoading(false); }
+      await client.post('/api/content/update', params, {
+        headers: { contentId: contentId.toString() },
+      });
+      toast.success('수정 성공');
+      router.back();
+    } catch (e: unknown) {
+      toast.error('수정 실패');
+      setError(e instanceof Error ? e.message : '업데이트 실패');
+    } finally {
+      setLoading(false);
+    }
   };
+
   return { handleUpdate, loading, error };
 }
- 

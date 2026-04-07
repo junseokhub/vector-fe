@@ -1,24 +1,23 @@
-import { useRouter } from "next/router";
-import { useResetRecoilState } from "recoil";
-import { authState } from "@/state/authAtom";
-import { storage } from "@/utils/storage";
-import client from "@/api/client";
-import toast from "react-hot-toast";
+import { useSetRecoilState } from 'recoil';
+import { useRouter } from 'next/router';
+import client from '@/api/client';
+import { tokenStore } from '@/store/token';
+import { authState } from '@/state/authAtom';
+import toast from 'react-hot-toast';
 
 export function useLogout() {
-  const resetAuth = useResetRecoilState(authState);
+  const setAuth = useSetRecoilState(authState);
   const router = useRouter();
 
   const handleLogout = async () => {
     try {
-      await client.get("/api/auth/logout");
+      await client.post('/api/auth/logout');
     } catch {
     } finally {
-      resetAuth();
-      storage.remove("accessToken");
-      storage.remove("userId");
-      toast.success("로그아웃 됐습니다.");
-      router.replace("/login");
+      tokenStore.clear();
+      setAuth({ isAuthenticated: false, id: null });
+      toast.success('로그아웃 되었습니다.');
+      router.push('/login');
     }
   };
 

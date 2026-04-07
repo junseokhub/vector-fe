@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useRecoilValue } from "recoil";
 import { authState } from "@/state/authAtom";
-import { projectKeyState } from "@/state/projectAtom";
 import { useGetAllProject } from "@/hooks/project/useGetAllProject";
 import { useCreateProject } from "@/hooks/project/useCreateProject";
 import ProjectCreateModal from "./ProjectCreateModal";
@@ -12,9 +11,13 @@ import type { Project } from "@/types";
 
 export default function ProjectList() {
   const { id: userId } = useRecoilValue(authState);
+  if (userId === null) return null;
+  return <ProjectListInner userId={userId} />;
+}
+
+function ProjectListInner({ userId }: { userId: number }) {
   const { projects, setProjects, loading, error } = useGetAllProject(userId);
   const { handleSubmit } = useCreateProject(userId, setProjects);
-  const setSelectedProjectKey = useSetRecoilState(projectKeyState);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
@@ -43,10 +46,7 @@ export default function ProjectList() {
           {projects.map((p: Project) => (
             <div
               key={p.id}
-              onClick={() => {
-                setSelectedProjectKey(p.key);
-                router.push(`/project/detail?key=${encodeURIComponent(p.key)}`);
-              }}
+              onClick={() => router.push(`/project/detail?key=${encodeURIComponent(p.key)}`)}
               className={`group flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
                 p.mine
                   ? "bg-indigo-50 border-indigo-200 hover:border-indigo-300"

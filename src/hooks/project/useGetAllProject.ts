@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import client from "@/api/client";
-import { storage } from "@/lib/storage";
-import type { Project } from "@/types";
-import toast from "react-hot-toast";
+import { useState, useEffect } from 'react';
+import client from '@/api/client';
+import type { Project } from '@/types';
+import toast from 'react-hot-toast';
 
 export function useGetAllProject(userId: number) {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -11,19 +10,14 @@ export function useGetAllProject(userId: number) {
 
   useEffect(() => {
     const fetchProjects = async () => {
-      const token = storage.get("accessToken");
-      if (!token) {
-        setError("로그인이 필요합니다.");
-        setLoading(false);
-        return;
-      }
       try {
-        const response = await client.get(`/api/invite/list/my?userId=${encodeURIComponent(userId)}`).json<Project[]>();
-        setProjects(response);
-      } catch (e) {
-        toast.error("불러오기 실패");
-        const errorMessage = e instanceof Error ? e.message : "알 수 없는 오류";
-        setError(errorMessage);
+        const { data } = await client.get<Project[]>(
+          `/api/invite/list/my?userId=${encodeURIComponent(userId)}`
+        );
+        setProjects(data);
+      } catch (e: unknown) {
+        toast.error('불러오기 실패');
+        setError(e instanceof Error ? e.message : '알 수 없는 오류');
       } finally {
         setLoading(false);
       }

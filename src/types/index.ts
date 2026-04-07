@@ -1,6 +1,6 @@
 // ─── Auth ────────────────────────────────────────────────────────────────────
 export type AuthState = {
-  accessToken: string | null;
+  isAuthenticated: boolean;
   id: number | null;
 };
 export interface LoginParams { 

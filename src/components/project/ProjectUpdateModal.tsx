@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
-import { useUpdateProject } from "@/hooks/project/useUpdateProject";
 import type { ProjectUpdateParams, ProjectUpdateResponse } from "@/types";
+import { useUpdateProject } from "@/hooks/project/useCreateProject";
 
 interface Props {
   project: ProjectUpdateResponse;

@@ -1,61 +1,78 @@
-import ky, { HTTPError } from "ky";
-import { getRecoil, setRecoil } from "recoil-nexus";
-import { authState } from "@/state/authAtom";
-import { storage } from "@/utils/storage";
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
+import { tokenStore } from '@/store/token';
 
-const client = ky.create({
+interface ReissueResponse {
+  accessToken: string;
+  id: number;
+}
+
+const client = axios.create({
   timeout: 10000,
-  headers: { "Content-Type": "application/json" },
-  hooks: {
-    beforeRequest: [
-      (request) => {
-        const url = new URL(request.url);
-        const path = url.pathname;
-
-        if (!path.includes("auth/login") && !path.includes("user/sign-up")) {
-          const token = getRecoil(authState)?.accessToken ?? storage.get("accessToken");
-          if (token) request.headers.set("Authorization", `Bearer ${token}`);
-        }
-      },
-    ],
-    afterResponse: [
-      async (request, options, response) => {
-        if (response.status === 401) {
-          const expiredToken =
-            getRecoil(authState)?.accessToken ?? storage.get("accessToken");
-          if (!expiredToken) return response;
-
-          try {
-            const reissued = await ky
-              .post(`${process.env.NEXT_PUBLIC_API_URL}/auth/reissue`, {
-                headers: { Authorization: `Bearer ${expiredToken}` },
-              })
-              .json<{ accessToken: string }>();
-
-            // 새 토큰 저장
-            setRecoil(authState, (prev) => ({
-              ...prev,
-              accessToken: reissued.accessToken,
-            }));
-            storage.set("accessToken", reissued.accessToken);
-
-            // 원래 요청 새 토큰으로 재시도
-            request.headers.set("Authorization", `Bearer ${reissued.accessToken}`);
-            return ky(request);
-          } catch {
-            // Refresh Token도 만료 → 강제 로그아웃
-            setRecoil(authState, { accessToken: null, id: null });
-            storage.remove("accessToken");
-            storage.remove("userId");
-            window.location.href = "/login";
-          }
-        }
-
-        return response;
-      },
-    ],
-    beforeError: [(error) => error],
-  },
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
+
+client.interceptors.request.use(
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    const token = tokenStore.get();
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error: AxiosError): Promise<AxiosError> => Promise.reject(error)
+);
+
+let refreshPromise: Promise<string> | null = null;
+
+client.interceptors.response.use(
+  (res: AxiosResponse): AxiosResponse => res,
+  async (error: AxiosError): Promise<AxiosResponse> => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    if (
+      (error.response?.status === 401 || error.response?.status === 403) &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        if (!refreshPromise) {
+          refreshPromise = axios
+            .post<ReissueResponse>(
+              '/api/auth/reissue',
+              {},
+              { withCredentials: true }
+            )
+            .then((res: AxiosResponse<ReissueResponse>): string => {
+              const newToken = res.data.accessToken;
+              tokenStore.set(newToken);
+              return newToken;
+            })
+            .finally((): void => {
+              refreshPromise = null;
+            });
+        }
+
+        // ✅ 이미 진행 중인 refreshPromise 대기
+        const newToken = await refreshPromise;
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+        return client(originalRequest);
+      } catch {
+        tokenStore.clear();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default client;
