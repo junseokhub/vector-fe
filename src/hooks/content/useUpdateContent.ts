@@ -14,9 +14,7 @@ export function useUpdateContent() {
     setError(null);
 
     try {
-      await client.post('/api/content/update', params, {
-        headers: { contentId: contentId.toString() },
-      });
+      await client.patch(`/api/content/${contentId}`, params);
       toast.success('수정 성공');
       router.back();
     } catch (e: unknown) {

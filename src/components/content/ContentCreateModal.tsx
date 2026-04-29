@@ -16,14 +16,14 @@ export default function ContentCreateModal(props: Props) {
   return <ContentCreateModalInner {...props} userId={auth.id} />;
 }
 
-function ContentCreateModalInner({ projectKey, onClose, onCreate, userId }: Props & { userId: number }) {
+function ContentCreateModalInner({ projectKey, onClose, onCreate }: Props & { userId: number }) {
   const [title, setTitle] = useState("");
   const [answer, setAnswer] = useState("");
   const { handleCreate, loading, error } = useCreateContent();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleCreate({ userId, title, answer, projectKey });
+    await handleCreate({ title, answer, projectKey });
     onCreate?.();
     onClose();
   };

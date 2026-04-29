@@ -9,15 +9,12 @@ export function useCreateContent() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleCreate = async (payload: ContentCreateParams & { userId: number }) => {
+  const handleCreate = async (payload: ContentCreateParams) => {
     setLoading(true);
     setError(null);
-    const { userId, ...params } = payload;
 
     try {
-      const { data } = await client.post('/api/content/create', params, {
-        headers: { userId: userId.toString() },
-      });
+      const { data } = await client.post('/api/content', payload);
       toast.success('생성 성공');
       router.refresh();
       return data;

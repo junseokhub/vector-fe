@@ -105,7 +105,7 @@ export default function ProjectCreateModal({ createdUserId, onClose, onCreate }:
     if (!name.trim()) { alert("프로젝트 이름을 입력하세요."); return; }
     if (!embedModel) { alert("임베딩 모델을 선택하세요."); return; }
     if (dimensions <= 0) { alert("차원값이 올바르지 않습니다."); return; }
-    await onCreate({ name, createdUserId, dimensions });
+    await onCreate({ name, dimensions });
   };
 
   return (

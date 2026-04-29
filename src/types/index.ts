@@ -65,7 +65,6 @@ export interface Project {
 
 export interface CreateProjectParams {
   name: string;
-  createdUserId: number;
   dimensions: number;
 }
 
@@ -77,7 +76,6 @@ export interface ProjectUpdateParams {
   chatModel: string;
   dimensions: number;
   llmPlatform: LlmPlatform;
-  updatedUserId: number;
 }
 
 export interface ProjectUpdateResponse extends ProjectUpdateParams {
@@ -110,7 +108,6 @@ export interface ContentCreateParams {
 export interface ContentUpdateParams {
   title: string;
   answer: string;
-  updatedUserId: number;
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────

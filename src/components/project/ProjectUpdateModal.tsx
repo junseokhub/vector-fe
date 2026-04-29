@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
 import { useGetModels } from "@/hooks/model/useGetModels";
-import { useUpdateProject } from "@/hooks/project/useCreateProject";
+import { useUpdateProject } from "@/hooks/project/useUpdateProject";
 import type { LlmPlatform, LlmModelInfo, ProjectUpdateParams, ProjectUpdateResponse } from "@/types";
 
 interface Props {
@@ -104,8 +104,7 @@ export default function ProjectUpdateModal({ project, onClose, onUpdate, updated
     chatModel: project.chatModel ?? "",
     dimensions: project.dimensions,
     llmPlatform: project.llmPlatform ?? "OPENAI",
-    updatedUserId,
-  }), [project, updatedUserId]);
+  }), [project]);
 
   const [form, setForm] = useState(original);
   // modelDimLocked: true when selected model has fixed dimensions (not flex)
@@ -161,8 +160,8 @@ export default function ProjectUpdateModal({ project, onClose, onUpdate, updated
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const changed = { ...getChangedFields(original, form), updatedUserId };
-    if (Object.keys(changed).length === 1) { alert("변경된 내용이 없습니다."); return; }
+    const changed = { ...getChangedFields(original, form) };
+    if (Object.keys(changed).length === 0) { alert("변경된 내용이 없습니다."); return; }
     await handleUpdate(project.key, changed);
     onUpdate?.();
     onClose();

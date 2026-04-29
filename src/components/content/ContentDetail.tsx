@@ -30,7 +30,7 @@ export default function ContentDetail({ contentKey }: { contentKey: string }) {
 
   const handleSave = async () => {
     if (!isDirty) { alert("변경된 내용이 없습니다."); return; }
-    await handleUpdate(content.id, { title, answer, updatedUserId: userId });
+    await handleUpdate(content.id, { title, answer });
     setIsEditing(false);
   };
 

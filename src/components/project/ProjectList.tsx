@@ -22,7 +22,7 @@ export default function ProjectList() {
 
 function ProjectListInner({ userId }: { userId: number }) {
   const { projects, setProjects, loading, error } = useGetAllProject(userId);
-  const { handleSubmit } = useCreateProject(userId, setProjects);
+  const { handleSubmit } = useCreateProject(setProjects);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
